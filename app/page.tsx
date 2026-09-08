@@ -12,7 +12,6 @@ import {
   FolderOpen,
   Printer,
   FileText,
-  UserRound,
   Undo2,
   Redo2,
   Trash2,
@@ -463,39 +462,17 @@ export default function Home() {
       notify(e instanceof Error ? e.message : "无法读取此文件。");
     }
   }
+  function openPrint() {
+    try {
+      const key = "copybook-print-" + crypto.randomUUID();
+      sessionStorage.setItem(key, JSON.stringify({ ...book, page: 1 }));
+      const win = window.open("./renderer/print.html#" + key, "_blank");
+      if (!win) { sessionStorage.removeItem(key); notify("请允许打开打印页面后重试。"); }
+    } catch { notify("无法准备打印页面，请尝试下载打印文件。"); }
+  }
   const c = book.config;
   return (
     <>
-      <header className="header">
-        <div className="topnav">
-          <a className="brand" href="/">
-            我的字帖
-          </a>
-          <nav>
-            {[
-              ["汉语拼音", "https://www.nqez.com/html/hanyupinyin.html"],
-              ["偏旁部首", "https://www.nqez.com/html/pianpanbushou.html"],
-              ["教程帮助", "help"],
-              ["样式字帖", "templates"],
-              ["本地存档", "library"],
-              ["使用文档", "help"],
-            ].map(([label, url]) =>
-              url.startsWith("https") ? (
-                <a key={label} href={url} target="_blank" rel="noreferrer" title="打开参考资料">
-                  {label}
-                </a>
-              ) : (
-                <button key={label} onClick={() => setModal(url)}>
-                  {label}
-                </button>
-              ),
-            )}
-          </nav>
-          <button className="user-icon" aria-label="本设备字帖" onClick={() => setModal("library")}>
-            <UserRound size={23} />
-          </button>
-        </div>
-      </header>
       <main className={"workspace" + (full ? " full-preview" : "")}>
         <section className="left-pane">
           <div className="paper-toolbar">
@@ -606,7 +583,7 @@ export default function Home() {
                     setReady(true);
                     send("render", { ...current.current, page: 1 });
                   }}
-                  src="/renderer/frame.html"
+                  src="./renderer/frame.html"
                   title="字帖预览"
                   style={{
                     width: Math.ceil(pw * 3.78),
@@ -828,7 +805,7 @@ export default function Home() {
               notify("请输入单词内容。");
               return;
             }
-            if (printMode) send("print");
+            if (printMode) openPrint();
             else setModal("print");
           }}
         >
@@ -1009,6 +986,7 @@ export default function Home() {
                 </a>
               )}
               <div className="dialog-buttons">
+                <button onClick={() => setModal("library")}>打开本设备存档</button>
                 <button onClick={saveDevice}>保存本设备</button>
                 <button className="primary" onClick={saveLocal}>
                   保存本地文件
@@ -1079,7 +1057,7 @@ export default function Home() {
                   放大查看
                 </button>
                 <button onClick={() => send("export-html")}>下载打印文件</button>
-                <button className="primary" onClick={() => send("print")}>
+                <button className="primary" onClick={() => openPrint()}>
                   <Printer size={17} />
                   打印 / 保存PDF
                 </button>

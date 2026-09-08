@@ -114,7 +114,7 @@ export function validateBook(input: unknown): Copybook {
   return { config: cfg, moreText, additions };
 }
 export async function readCopybook(raw: string): Promise<Copybook> {
-  await loadScript("/vendor/lzstr.js");
+  await loadScript("./vendor/lzstr.js");
   const lz = (window as GlobalTools).LZString;
   let data;
   try {
@@ -144,7 +144,7 @@ export async function readCopybook(raw: string): Promise<Copybook> {
   });
 }
 export async function exportCopybook(book: Copybook) {
-  await loadScript("/vendor/lzstr.js");
+  await loadScript("./vendor/lzstr.js");
   const lz = (window as GlobalTools).LZString;
   return lz.compressToUTF16(
     JSON.stringify({
@@ -157,7 +157,7 @@ export async function exportCopybook(book: Copybook) {
   );
 }
 export async function readSpreadsheet(file: File) {
-  await loadScript("/vendor/xlsx.full.min.js");
+  await loadScript("./vendor/xlsx.full.min.js");
   const x = (window as GlobalTools).XLSX;
   const wb = x.read(await file.arrayBuffer(), { type: "array", sheetRows: 3001 });
   return {

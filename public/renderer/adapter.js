@@ -7,17 +7,18 @@ const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replac
 const margins=(str)=>{const v=String(str).split('-').map(Number);return [v[0]||0,v[1]??v[0]??0,v[2]??v[0]??0,v[3]??v[1]??v[0]??0]};
 const finite=(v,f=0)=>Number.isFinite(Number(v))?Number(v):f;
 function showPage(n){activePage=Math.max(1,Math.min(n,document.querySelectorAll('.paper').length));document.querySelectorAll('.paper').forEach((p,i)=>p.style.display=i===activePage-1?'block':'none')}
-async function render(data){
+export async function render(data){
  if(busy){queued=data;return} busy=true; current=data; const version=++generation;
  try{
  const cfg={...data.config}; const size=cfg.pagesize.split(',').map(Number),split=cfg.yzy.split(',').map(Number),pad=margins(cfg.ppd),bleed=margins(cfg.papercx);
  const w=size[0],h=size[1],cols=split[0],rows=split[1],cw=w/cols-pad[1]-pad[3],ch=h/rows-pad[0]-pad[2];
  if(![w,h,cols,rows,cw,ch].every(n=>Number.isFinite(n)&&n>0))throw Error('纸张或边距设置无效，请留出足够的书写区域。');
- document.querySelector('#geometry').textContent=`@page{size:${w+bleed[1]+bleed[3]}mm ${h+bleed[0]+bleed[2]}mm;margin:0}html,body,.paper{width:${w+bleed[1]+bleed[3]}mm;height:${h+bleed[0]+bleed[2]}mm}.paper{padding:${bleed.join('mm ')}mm;box-sizing:border-box}.page{width:${cw}mm;height:${ch}mm;padding:${pad.join('mm ')}mm}.cont{width:${cw}mm}`;
+ document.querySelector('#geometry').textContent=`@page{size:${w+bleed[1]+bleed[3]}mm ${h+bleed[0]+bleed[2]}mm;margin:0}:root{--paper-height:${h+bleed[0]+bleed[2]}mm}html,body,.paper{width:${w+bleed[1]+bleed[3]}mm;height:${h+bleed[0]+bleed[2]}mm}.paper{padding:${bleed.join('mm ')}mm;box-sizing:border-box}.page{width:${cw}mm;height:${ch}mm;padding:${pad.join('mm ')}mm}.cont{width:${cw}mm}`;
  document.querySelector('#allpage').innerHTML='<div class="paper"><div class="page"><div class="cont" id="temp_cont"></div></div></div>';
  const font=cfg.fonttype.replace(/\.woff$/,'');
  
- if(!cfg.sysfont&&![...document.fonts].some(f=>f.family===font)){const face=new FontFace(font,`url("/font/${encodeURIComponent(cfg.fonttype)}")`);await face.load();document.fonts.add(face)}
+ document.querySelector("#myfontstyle").textContent = `@font-face{font-family:"${font}";src:url("${new URL("../font/"+encodeURIComponent(cfg.fonttype),import.meta.url)}")}`;
+ await document.fonts.load(`33px "${font}"`);
  for(const k of ['words','titlestr','headcont','footcont'])cfg[k]=esc(cfg[k]);
  for(const k of ['sysfont','secondfont'])cfg[k]=String(cfg[k]||'').replace(/[<>;{}"']/g,'');
  cfg.flogo='';cfg.yulian=0;cfg.okwords={cds:cfg.words,words:[],moreText:data.moreText||{},gconfig:{}};for(const k of ['titlestr','headcont','footcont'])if(data.moreText?.[k])cfg.okwords.gconfig[k]={style:data.moreText[k]};
@@ -46,7 +47,7 @@ tell('ready');
 
 async function exportHtml(){
  try{await document.fonts.ready;const clone=document.documentElement.cloneNode(true);clone.querySelectorAll('script,meta[http-equiv],#loadingFont').forEach(e=>e.remove());clone.querySelectorAll('.paper').forEach(e=>e.style.display='block');
- const css=await (await fetch('/renderer/paper.css')).text();const style=document.createElement('style');style.textContent=css.replace(/@font-face\{[^}]+\}/g,'')+'html,body{width:auto!important;height:auto!important;overflow:visible!important}';clone.querySelector('link[rel="stylesheet"]').replaceWith(style);
- const names=[current.config.fonttype,'HwyPinyin.woff'];let fontCss='';for(const name of names){const blob=await (await fetch('/font/'+encodeURIComponent(name))).blob();const url=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.readAsDataURL(blob)});fontCss+=`@font-face{font-family:"${name==='HwyPinyin.woff'?'hy-py':name.replace('.woff','')}";src:url("${url}")}`}
+ const css=await (await fetch(new URL('./paper.css',import.meta.url))).text();const style=document.createElement('style');style.textContent=css.replace(/@font-face\{[^}]+\}/g,'')+'html,body{width:auto!important;height:auto!important;overflow:visible!important}';clone.querySelector('link[rel="stylesheet"]').replaceWith(style);
+ const names=[current.config.fonttype,'HwyPinyin.woff'];let fontCss='';for(const name of names){const blob=await (await fetch(new URL('../font/'+encodeURIComponent(name),import.meta.url))).blob();const url=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.readAsDataURL(blob)});fontCss+=`@font-face{font-family:"${name==='HwyPinyin.woff'?'hy-py':name.replace('.woff','')}";src:url("${url}")}`}
  const fs=document.createElement('style');fs.textContent=fontCss;clone.querySelector('head').append(fs);tell('html',{html:'<!doctype html>'+clone.outerHTML});}catch(e){tell('error',{text:'打印文件导出失败：'+e.message})}
 }
