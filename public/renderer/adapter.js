@@ -17,7 +17,7 @@ export async function render(data){
  document.querySelector('#allpage').innerHTML='<div class="paper"><div class="page"><div class="cont" id="temp_cont"></div></div></div>';
  const font=cfg.fonttype.replace(/\.woff$/,'');
  
- document.querySelector("#myfontstyle").textContent = `@font-face{font-family:"${font}";src:url("${new URL("../font/"+encodeURIComponent(cfg.fonttype),import.meta.url)}")}`;
+ document.querySelector("#copybook-fonts").textContent = `@font-face{font-family:"${font}";src:url("${new URL("../font/"+encodeURIComponent(cfg.fonttype),import.meta.url)}")}`;
  await document.fonts.load(`33px "${font}"`);
  for(const k of ['words','titlestr','headcont','footcont'])cfg[k]=esc(cfg[k]);
  for(const k of ['sysfont','secondfont'])cfg[k]=String(cfg[k]||'').replace(/[<>;{}"']/g,'');
@@ -46,7 +46,7 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||e.sou
 tell('ready');
 
 async function exportHtml(){
- try{await document.fonts.ready;const clone=document.documentElement.cloneNode(true);clone.querySelectorAll('script,meta[http-equiv],#loadingFont').forEach(e=>e.remove());clone.querySelectorAll('.paper').forEach(e=>e.style.display='block');
+ try{await document.fonts.ready;const clone=document.documentElement.cloneNode(true);clone.querySelectorAll('script,meta[http-equiv],#loadingFont,#copybook-fonts').forEach(e=>e.remove());clone.querySelectorAll('.paper').forEach(e=>e.style.display='block');
  const css=await (await fetch(new URL('./paper.css',import.meta.url))).text();const style=document.createElement('style');style.textContent=css.replace(/@font-face\{[^}]+\}/g,'')+'html,body{width:auto!important;height:auto!important;overflow:visible!important}';clone.querySelector('link[rel="stylesheet"]').replaceWith(style);
  const names=[current.config.fonttype,'HwyPinyin.woff'];let fontCss='';for(const name of names){const blob=await (await fetch(new URL('../font/'+encodeURIComponent(name),import.meta.url))).blob();const url=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.readAsDataURL(blob)});fontCss+=`@font-face{font-family:"${name==='HwyPinyin.woff'?'hy-py':name.replace('.woff','')}";src:url("${url}")}`}
  const fs=document.createElement('style');fs.textContent=fontCss;clone.querySelector('head').append(fs);tell('html',{html:'<!doctype html>'+clone.outerHTML});}catch(e){tell('error',{text:'打印文件导出失败：'+e.message})}

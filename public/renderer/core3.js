@@ -843,7 +843,7 @@ class Zitie {
     let h = this.fonttype.split("."),
       o = checkFont(h[0]);
     if (("文鼎ＰＬ简中楷" != h[0] && s(h[0], !o), !o && window.FontFace)) {
-      let t = new FontFace(h[0], 'local("' + h[0] + '"),url("/font/' + this.fonttype + '")');
+      let t = new FontFace(h[0], 'local("' + h[0] + '"),url("../font/' + this.fonttype + '")');
       loading.mess("正在加载字体文件");
       let e = setTimeout(function () {
         loading.obj.is(":visible") &&
