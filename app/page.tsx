@@ -470,6 +470,24 @@ export default function Home() {
       notify(e instanceof Error ? e.message : "PDF生成失败，请重试。");
     } finally { setPdfProgress(""); }
   }
+  function showFullPreview(show: boolean) {
+    if (show === full) return;
+    if (show) {
+      history.pushState({ ...history.state, copybookPreview: true }, "", "#copybook-preview");
+      setFull(true);
+    } else if (history.state?.copybookPreview) {
+      history.back();
+    } else {
+      history.replaceState(history.state, "", location.pathname + location.search);
+      setFull(false);
+    }
+  }
+  useEffect(() => {
+    const syncPreview = () => setFull(location.hash === "#copybook-preview");
+    syncPreview();
+    window.addEventListener("popstate", syncPreview);
+    return () => window.removeEventListener("popstate", syncPreview);
+  }, []);
   function openPrint() {
     try {
       const key = "copybook-print-" + crypto.randomUUID();
@@ -800,7 +818,7 @@ export default function Home() {
         <button title="重做" aria-label="重做" onClick={redo}>
           <Redo2 size={18} />
         </button>
-        <button title="展开字帖预览" aria-label="展开字帖预览" onClick={() => setFull(!full)}>
+        <button title="展开字帖预览" aria-label="展开字帖预览" onClick={() => showFullPreview(!full)}>
           <PanelTop size={23} />
         </button>
         <span className="switch-line">
@@ -1058,17 +1076,17 @@ export default function Home() {
               <div className="dialog-buttons">
                 <button
                   onClick={() => {
-                    setFull(true);
+                    showFullPreview(true);
                     setModal("");
                   }}
                 >
                   <Maximize2 size={16} />
                   放大查看
                 </button>
-                <button disabled={!!pdfProgress} onClick={downloadPdf}>{pdfProgress || "下载PDF文件(含字体)"}</button>
-                <button className="primary" onClick={() => openPrint()}>
+                <button className="primary" disabled={!!pdfProgress} onClick={downloadPdf}>{pdfProgress || "下载PDF文件(含字体)"}</button>
+                <button onClick={() => openPrint()}>
                   <Printer size={17} />
-                  打印 / 保存PDF
+                  打印
                 </button>
               </div>
             </>
