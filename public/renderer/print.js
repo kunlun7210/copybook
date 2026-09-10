@@ -1,5 +1,13 @@
 import { render } from './adapter.js';
 const status = document.querySelector('#print-status');
+document.querySelector('.back-button').addEventListener('click', event => {
+  const editorURL = new URL('../', location.href);
+  if (document.referrer && new URL(document.referrer).origin === editorURL.origin &&
+      new URL(document.referrer).pathname === editorURL.pathname && history.length > 1) {
+    event.preventDefault();
+    history.back();
+  }
+});
 const button = document.querySelector('#print-button');
 button.addEventListener('click', () => {
   window.scrollTo(0, 0);

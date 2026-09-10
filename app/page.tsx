@@ -118,6 +118,7 @@ export default function Home() {
     [ready, setReady] = useState(false),
     [mounted, setMounted] = useState(false),
     [customSize, setCustomSize] = useState(["210", "297"]),
+    [pdfProgress, setPdfProgress] = useState(""),
     [downloadFile, setDownloadFile] = useState<{ url: string; name: string } | null>(null),
     [sheetData, setSheetData] = useState<{ name: string; rows: string[][] }[]>([]),
     [sheetIndex, setSheetIndex] = useState("0"),
@@ -222,16 +223,6 @@ export default function Home() {
         setGotoPage(String(d.page));
       }
       if (d.type === "error") notify(d.text);
-      if (d.type === "html") {
-        const bytes = new TextEncoder().encode(d.html);
-        let binary = "";
-        for (const b of bytes) binary += String.fromCharCode(b);
-        setDownloadFile({
-          url: "data:text/html;base64," + btoa(binary),
-          name: "我的字帖-打印.html",
-        });
-        notify("打印文件已准备好，请点击下载。");
-      }
       if (d.type === "move") {
         const b = current.current;
         commit({
@@ -462,13 +453,31 @@ export default function Home() {
       notify(e instanceof Error ? e.message : "无法读取此文件。");
     }
   }
+  async function downloadPdf() {
+    if (pdfProgress) return;
+    setPdfProgress("正在准备PDF…");
+    setDownloadFile(null);
+    try {
+      const doc = frame.current?.contentDocument;
+      if (!doc) throw new Error("请等待字帖生成后重试。");
+      const { exportPdf } = await import("./pdf-export");
+      const url = await exportPdf(doc, book.config.fonttype, (page, count) => {
+        setPdfProgress(`正在生成PDF ${page}/${count}…`);
+      });
+      setDownloadFile({ url, name: "我的字帖.pdf" });
+      notify("PDF已生成，请点击下载。");
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "PDF生成失败，请重试。");
+    } finally { setPdfProgress(""); }
+  }
   function openPrint() {
     try {
       const key = "copybook-print-" + crypto.randomUUID();
       sessionStorage.setItem(key, JSON.stringify({ ...book, page: 1 }));
-      const win = window.open("./renderer/print.html#" + key, "_blank");
-      if (!win) { sessionStorage.removeItem(key); notify("请允许打开打印页面后重试。"); }
-    } catch { notify("无法准备打印页面，请尝试下载打印文件。"); }
+      // Flush the draft before navigating; the usual autosave is debounced.
+      localStorage.setItem("copybook-draft", JSON.stringify(book));
+      window.location.assign("./renderer/print.html#" + key);
+    } catch { notify("无法准备打印页面，请尝试下载PDF文件。"); }
   }
   const c = book.config;
   return (
@@ -1038,13 +1047,13 @@ export default function Home() {
                 共 {count} 页 ·{" "}
                 {paperSizes.find((p) => p[0] === c.pagesize)?.[1] || c.pagesize + " mm"}
               </p>
-              {downloadFile && downloadFile.name.endsWith(".html") && (
+              {downloadFile && downloadFile.name.endsWith(".pdf") && (
                 <a className="download-link" href={downloadFile.url} download={downloadFile.name}>
-                  下载打印文件（含字体）
+                  下载PDF文件(含字体)
                 </a>
               )}
               <p className="muted">
-                打印时选择对应纸张，缩放设为100%，关闭页眉和页脚。也可在打印窗口中选择“存储为PDF”。
+                打印时选择对应纸张，缩放设为100%，关闭页眉和页脚。
               </p>
               <div className="dialog-buttons">
                 <button
@@ -1056,7 +1065,7 @@ export default function Home() {
                   <Maximize2 size={16} />
                   放大查看
                 </button>
-                <button onClick={() => send("export-html")}>下载打印文件</button>
+                <button disabled={!!pdfProgress} onClick={downloadPdf}>{pdfProgress || "下载PDF文件(含字体)"}</button>
                 <button className="primary" onClick={() => openPrint()}>
                   <Printer size={17} />
                   打印 / 保存PDF
