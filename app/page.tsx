@@ -1,4 +1,6 @@
 "use client";
+
+import { createPdfDownload, downloadPdfFile } from "./pdf-download";
 import { readCopybook, exportCopybook, readSpreadsheet, validateBook } from "./io";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useCopybookTools } from "./use-tools";
@@ -453,22 +455,23 @@ export default function Home() {
       notify(e instanceof Error ? e.message : "无法读取此文件。");
     }
   }
+  const pdfDownload = useRef<ReturnType<typeof createPdfDownload> | null>(null);
   async function downloadPdf() {
-    if (pdfProgress) return;
-    setPdfProgress("正在准备PDF…");
-    setDownloadFile(null);
+    if (!pdfDownload.current) {
+      pdfDownload.current = createPdfDownload(async () => {
+        const doc = frame.current?.contentDocument;
+        if (!doc) throw new Error("字帖尚未生成");
+        const { exportPdf } = await import("./pdf-export");
+        return exportPdf(doc, current.current.config.fonttype, () => {});
+      }, downloadPdfFile);
+    }
     try {
-      const doc = frame.current?.contentDocument;
-      if (!doc) throw new Error("请等待字帖生成后重试。");
-      const { exportPdf } = await import("./pdf-export");
-      const url = await exportPdf(doc, book.config.fonttype, (page, count) => {
-        setPdfProgress(`正在生成PDF ${page}/${count}…`);
+      await pdfDownload.current(JSON.stringify(book), loading => {
+        setPdfProgress(loading ? "正在生成PDF…" : "");
       });
-      setDownloadFile({ url, name: "我的字帖.pdf" });
-      notify("PDF已生成，请点击下载。");
-    } catch (e) {
-      notify(e instanceof Error ? e.message : "PDF生成失败，请重试。");
-    } finally { setPdfProgress(""); }
+    } catch {
+      notify("PDF下载未完成，请重试");
+    }
   }
   function showFullPreview(show: boolean) {
     if (show === full) return;
@@ -1065,15 +1068,10 @@ export default function Home() {
                 共 {count} 页 ·{" "}
                 {paperSizes.find((p) => p[0] === c.pagesize)?.[1] || c.pagesize + " mm"}
               </p>
-              {downloadFile && downloadFile.name.endsWith(".pdf") && (
-                <a className="download-link" href={downloadFile.url} download={downloadFile.name}>
-                  下载PDF文件(含字体)
-                </a>
-              )}
               <p className="muted">
                 打印时选择对应纸张，缩放设为100%，关闭页眉和页脚。
               </p>
-              <div className="dialog-buttons">
+              <div className="dialog-buttons pdf-actions">
                 <button
                   onClick={() => {
                     showFullPreview(true);
