@@ -506,6 +506,7 @@ export default function Home() {
       <main className={"workspace" + (full ? " full-preview" : "")}>
         <section className="left-pane">
           <div className="paper-toolbar">
+            {full && <button className="app-preview-back" onClick={() => showFullPreview(false)}>← 返回字帖</button>}
             <b>纸张</b>
             <label className="paper-size-label">
               尺寸
