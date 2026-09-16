@@ -26,6 +26,7 @@
  .print-toolbar>span{grid-column:1/-1;grid-row:2;text-align:center}
 }
 @media print{
- .print-document .preview-sheet{display:contents}
+ .print-document .preview-sheet{display:block;break-after:page;page-break-after:always}
+ .print-document .preview-sheet:last-child{break-after:auto;page-break-after:auto}
  .print-document .preview-sheet>.paper{transform:none!important;position:relative!important}
 }
