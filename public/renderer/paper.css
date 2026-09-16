@@ -8,3 +8,24 @@
 
 .print-toolbar .back-button{grid-column:1;justify-self:end;color:#367a6e;text-decoration:none;font-size:15px;white-space:nowrap}.print-toolbar .back-button:hover{text-decoration:underline}
 @media screen and (max-width:600px){.print-toolbar{padding:12px;gap:10px}.print-toolbar .back-button{font-size:14px}.print-toolbar>button{white-space:nowrap}}
+
+/* Screen preview scales independently of the physical print layout. */
+.print-toolbar .back-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:28px;padding:0 8px;border:1px solid #ddd;border-radius:3px;background:#fff;font-size:14px}
+.print-toolbar .back-button:hover{background:#fafafa;text-decoration:none}
+@media screen{
+ .print-document #allpage{width:100%;box-sizing:border-box;padding:16px 12px}
+ .print-document .preview-sheet{position:relative;margin:0 auto 16px;width:var(--preview-width);height:var(--preview-height)}
+ .print-document .preview-sheet>.paper{position:absolute;left:0;top:0;margin:0;transform:scale(var(--preview-scale));transform-origin:top left}
+ .print-toolbar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+ .print-toolbar>span{min-width:0;overflow-wrap:anywhere}
+}
+@media screen and (max-width:600px){
+ .print-toolbar{grid-template-columns:1fr auto auto 1fr;gap:10px}
+ .print-toolbar .back-button{grid-column:2;grid-row:1}
+ .print-toolbar>button{grid-column:3;grid-row:1}
+ .print-toolbar>span{grid-column:1/-1;grid-row:2;text-align:center}
+}
+@media print{
+ .print-document .preview-sheet{display:contents}
+ .print-document .preview-sheet>.paper{transform:none!important;position:relative!important}
+}
