@@ -53,6 +53,6 @@ try {
     sheet.append(p);
   });
   fitPreview();
-  status.textContent = `共 ${pages} 页 · 打印时使用对应纸张，缩放 100%，关闭页眉和页脚`;
+  status.textContent = `共 ${pages} 页 · 缩放 100%，关闭页眉和页脚`;
   button.disabled = false;
 } catch (e) { status.textContent = e.message; }
