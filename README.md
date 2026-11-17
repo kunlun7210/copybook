@@ -15,3 +15,7 @@ Node.js 24，运行 `npm ci`。原 Sites 开发入口为 `npm run dev`；GitHub 
 ## 验证
 
 参见 VALIDATION.md 和 PRINT-VALIDATION.md。第三方字体及参考实现来源见 THIRD_PARTY.md。
+
+## 使用与授权
+
+本项目用于个人学习与研究。项目自有代码未采用开源许可证，著作权由相应权利人保留。未经权利人许可，请勿将项目自有代码用于商业用途或再分发，法律另有规定的除外。
